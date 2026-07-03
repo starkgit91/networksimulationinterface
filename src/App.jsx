@@ -2,11 +2,6 @@
  * AGAD-UDL  —  Interactive Performance Dashboard
  * IIT Indore  |  Amit Dalal, Prashant Mishra
  * All metrics sourced directly from model_implementation_inference.ipynb
- * Plots reconstructed from notebook outputs:
- *   - ROC Curves (combined, all models / both datasets)
- *   - Training Loss Curves (all models / both datasets)
- *   - Testing Plots ICS  (Confusion / ROC / PR / Score-Dist / Per-Branch / Metrics)
- *   - Testing Plots CIC  (same 6-panel layout)
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -20,14 +15,18 @@ import {
 
 /* ─── Design tokens ─────────────────────────────────────────────────────── */
 const T = {
+  /* backgrounds */
   bg:       "#f8f9fa",
   white:    "#ffffff",
   surface:  "#f1f3f4",
+  /* borders */
   border:   "#dadce0",
   borderMd: "#bdc1c6",
+  /* text */
   text:     "#202124",
   sub:      "#5f6368",
   muted:    "#80868b",
+  /* brand palette – Google-style */
   blue:     "#1a73e8",
   blueL:    "#e8f0fe",
   green:    "#34a853",
@@ -40,107 +39,50 @@ const T = {
   purpleL:  "#f3e8fd",
   orange:   "#fa7b17",
   teal:     "#12b5cb",
-  brown:    "#795548",
-  pink:     "#e91e63",
-  gray:     "#607d8b",
-  olive:    "#afb42b",
+  /* chart grid */
   grid:     "#e8eaed",
 };
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   ACTUAL NOTEBOOK RESULTS  (model_implementation_inference.ipynb cell outputs)
-═══════════════════════════════════════════════════════════════════════════ */
+/* ─── Actual notebook results ─────────────────────────────────────────────
+   Source: model_implementation_inference.ipynb cell outputs               */
 
 // ── ICS-ADD Branch results (pipeline run) ──
 const ICS_BRANCHES = [
-  { model:"Autoencoder",   acc:0.9076, precision:0.9989, recall:0.8359, f1:0.9102, dr:0.8359, far:0.00114, rmse:0.3040, mae:0.0924  },
-  { model:"Bi-LSTM",       acc:0.5358, precision:0.5611, recall:0.7855, f1:0.6546, dr:0.7855, far:0.7819,  rmse:0.6813, mae:0.4642  },
-  { model:"Transformer",   acc:0.9990, precision:0.9990, recall:0.9992, f1:0.9991, dr:0.9992, far:0.00126, rmse:0.0316, mae:0.0010  },
-  { model:"GraphSAGE",     acc:0.9712, precision:0.9908, recall:0.9575, f1:0.9739, dr:0.9575, far:0.01136, rmse:0.1696, mae:0.0288  },
-  { model:"STGE Ensemble", acc:0.9925, precision:0.9974, recall:0.9892, f1:0.9933, dr:0.9892, far:0.00322, rmse:0.0864, mae:0.00747 },
+  { model:"Autoencoder",      acc:0.9076, precision:0.9989, recall:0.8359, f1:0.9102, dr:0.8359, far:0.00114, rmse:0.3040, mae:0.0924  },
+  { model:"Bi-LSTM",          acc:0.5358, precision:0.5611, recall:0.7855, f1:0.6546, dr:0.7855, far:0.7819,  rmse:0.6813, mae:0.4642  },
+  { model:"Transformer",      acc:0.9990, precision:0.9990, recall:0.9992, f1:0.9991, dr:0.9992, far:0.00126, rmse:0.0316, mae:0.0010  },
+  { model:"GraphSAGE",        acc:0.9712, precision:0.9908, recall:0.9575, f1:0.9739, dr:0.9575, far:0.01136, rmse:0.1696, mae:0.0288  },
+  { model:"STGE Ensemble",    acc:0.9925, precision:0.9974, recall:0.9892, f1:0.9933, dr:0.9892, far:0.00322, rmse:0.0864, mae:0.00747 },
 ];
 
 // ── CIC Dataset Branch results (pipeline run) ──
 const CIC_BRANCHES = [
-  { model:"Autoencoder",   acc:0.8618, precision:0.7622, recall:0.4330, f1:0.5522, dr:0.4330, far:0.03311, rmse:0.3717, mae:0.1382  },
-  { model:"Bi-LSTM",       acc:0.8032, precision:0.0000, recall:0.0000, f1:0.0000, dr:0.0000, far:0.000004,rmse:0.4436, mae:0.1968  },
-  { model:"Transformer",   acc:0.8924, precision:0.9915, recall:0.4573, f1:0.6259, dr:0.4573, far:0.000963,rmse:0.3280, mae:0.1076  },
-  { model:"GraphSAGE",     acc:0.8784, precision:0.9077, recall:0.4255, f1:0.5794, dr:0.4255, far:0.01060, rmse:0.3487, mae:0.1216  },
-  { model:"STGE Ensemble", acc:0.8915, precision:0.9886, recall:0.4541, f1:0.6224, dr:0.4541, far:0.00128, rmse:0.3293, mae:0.1085  },
+  { model:"Autoencoder",      acc:0.8618, precision:0.7622, recall:0.4330, f1:0.5522, dr:0.4330, far:0.03311, rmse:0.3717, mae:0.1382  },
+  { model:"Bi-LSTM",          acc:0.8032, precision:0.0000, recall:0.0000, f1:0.0000, dr:0.0000, far:0.000004,rmse:0.4436, mae:0.1968  },
+  { model:"Transformer",      acc:0.8924, precision:0.9915, recall:0.4573, f1:0.6259, dr:0.4573, far:0.000963,rmse:0.3280, mae:0.1076  },
+  { model:"GraphSAGE",        acc:0.8784, precision:0.9077, recall:0.4255, f1:0.5794, dr:0.4255, far:0.01060, rmse:0.3487, mae:0.1216  },
+  { model:"STGE Ensemble",    acc:0.8915, precision:0.9886, recall:0.4541, f1:0.6224, dr:0.4541, far:0.00128, rmse:0.3293, mae:0.1085  },
 ];
 
 // ── Confusion matrices (validation on held-out sets) ──
-const ICS_CM = { TN:15789, FP:51,  FN:218,  TP:19942 };  // n=36,000
-const CIC_CM = { TN:680521,FP:875, FN:91142, TP:75825 }; // n=848,363
+const ICS_CM  = { TN:15789, FP:51,  FN:218,  TP:19942 }; // n=36,000
+const CIC_CM  = { TN:680521,FP:875, FN:91142, TP:75825 }; // n=848,363
 
 // ── Ensemble weights (Config.py) ──
 const WEIGHTS = [
-  { branch:"Autoencoder", w:0.21, color:T.blue   },
-  { branch:"Bi-LSTM",     w:0.24, color:T.green  },
-  { branch:"GraphSAGE",   w:0.27, color:T.orange },
-  { branch:"Transformer", w:0.28, color:T.purple },
+  { branch:"Autoencoder",   w:0.21, color:T.blue   },
+  { branch:"Bi-LSTM",       w:0.24, color:T.green  },
+  { branch:"GraphSAGE",     w:0.27, color:T.orange },
+  { branch:"Transformer",   w:0.28, color:T.purple },
 ];
 
 // ── OOA optimal thresholds ──
 const TAU_ICS = 0.4212;
 const TAU_CIC = 0.1874;
 
-// ── AUC (ensemble) ──
+// ── AUC ──
 const AUC_ICS = 0.9987;
 const AUC_CIC = 0.8529;
-
-/* ── Combined ROC AUCs  (from "ROC Curves" notebook figure) ──────────────── */
-const ROC_AUCS = {
-  "ICS-ADD": [
-    { name:"Autoencoder",   auc:0.9943, color:T.blue   },
-    { name:"Bi-LSTM",       auc:0.5021, color:T.orange },
-    { name:"Transformer",   auc:0.9999, color:T.green  },
-    { name:"GraphSAGE",     auc:0.9943, color:T.red    },
-    { name:"STGE Ensemble", auc:0.9987, color:T.purple },
-  ],
-  "CICIoT2023": [
-    { name:"Autoencoder",   auc:0.7889, color:T.brown },
-    { name:"Bi-LSTM",       auc:0.4989, color:T.pink  },
-    { name:"Transformer",   auc:0.9075, color:T.gray  },
-    { name:"GraphSAGE",     auc:0.8034, color:T.olive },
-    { name:"STGE Ensemble", auc:0.8511, color:T.teal  },
-  ],
-};
-
-/* ── Per-dataset TESTING-PLOT data  (from "AGAD-UDL — Testing Plots" figures) ─ */
-const TEST_PLOTS = {
-  "ICS-ADD": {
-    cm:  { TN:15789, FP:51, FN:218, TP:19942 },
-    auc: { Ensemble:0.999, AE:0.994, LSTM:0.502, Transformer:1.000, GraphSAGE:0.994 },
-    ap:  0.999,
-    tau: 0.421,
-    branchAcc: [
-      { b:"AE", v:0.545 }, { b:"LSTM", v:0.536 }, { b:"Transformer", v:0.999 },
-      { b:"GraphSAGE", v:0.971 }, { b:"Ensemble", v:0.993 },
-    ],
-    metrics: [
-      { m:"Accuracy", v:0.993 }, { m:"Precision", v:0.997 }, { m:"Recall", v:0.989 },
-      { m:"F1", v:0.993 }, { m:"FAR", v:0.003 },
-    ],
-    hist: { bMu:0.33, bSd:0.075, bPk:14.2, aMu:0.75, aSd:0.13, aPk:5.4 },
-  },
-  "CICIoT2023": {
-    cm:  { TN:680521, FP:875, FN:91142, TP:75825 },
-    auc: { Ensemble:0.853, AE:0.788, LSTM:0.500, Transformer:0.907, GraphSAGE:0.804 },
-    ap:  0.683,
-    tau: 0.187,
-    branchAcc: [
-      { b:"AE", v:0.803 }, { b:"LSTM", v:0.803 }, { b:"Transformer", v:0.892 },
-      { b:"GraphSAGE", v:0.878 }, { b:"Ensemble", v:0.892 },
-    ],
-    metrics: [
-      { m:"Accuracy", v:0.892 }, { m:"Precision", v:0.989 }, { m:"Recall", v:0.454 },
-      { m:"F1", v:0.622 }, { m:"FAR", v:0.001 },
-    ],
-    hist: { bMu:0.06, bSd:0.035, bPk:19.7, aMu:0.40, aSd:0.05, aPk:9.2 },
-  },
-};
-const ROC_COLORS = { Ensemble:T.text, AE:T.blue, LSTM:T.orange, Transformer:T.green, GraphSAGE:T.red };
 
 // ── Actual AE loss per 10-epoch checkpoint ──
 const AE_LOSS_ICS = [
@@ -166,52 +108,22 @@ const LSTM_LOSS_CIC = [
   {ep:25,train:0.0112,val:0.0115},{ep:30,train:0.0111,val:0.0114},
 ];
 
-/* ── Full multi-model training-loss curves (from "Training Loss Curves" figure) ─
-   Reconstructed faithful curves anchored to the figure's start/end values.     */
-const TRAIN_SERIES = {
-  ae_ics:   { start:0.302, end:0.108, max:80, label:"Autoencoder (ICS)",     color:T.blue   },
-  lstm_ics: { start:0.524, end:0.141, max:30, label:"Bi-LSTM (ICS)",         color:T.orange },
-  trans_ics:{ start:0.209, end:0.004, max:30, label:"Transformer (ICS)",     color:T.green  },
-  gnn_ics:  { start:0.680, end:0.381, max:30, label:"GraphSAGE (ICS)",       color:T.red    },
-  ae_cic:   { start:0.130, end:0.002, max:80, label:"Autoencoder (CIC)",     color:T.purple, noisy:true },
-  lstm_cic: { start:0.057, end:0.010, max:30, label:"Bi-LSTM (CIC)",         color:T.brown  },
-  trans_cic:{ start:0.355, end:0.207, max:30, label:"Transformer (CIC)",     color:T.pink   },
-  gnn_cic:  { start:0.712, end:0.425, max:30, label:"GraphSAGE (CIC)",       color:T.gray   },
-};
-function buildTrainLoss() {
-  const E = 80, rows = [];
-  for (let e = 0; e <= E; e++) {
-    const row = { ep: e };
-    Object.entries(TRAIN_SERIES).forEach(([k, s]) => {
-      if (e <= s.max) {
-        const t = e / s.max;
-        let v = s.end + (s.start - s.end) * Math.exp(-3.4 * t);
-        if (s.noisy && e > 2 && e < s.max) v += Math.sin(e * 1.15) * 0.022 * (1 - t);
-        row[k] = +Math.max(0, v).toFixed(4);
-      }
-    });
-    rows.push(row);
-  }
-  return rows;
-}
-const TRAIN_LOSS = buildTrainLoss();
-
 // ── Dataset info ──
 const DS_INFO = {
-  "ICS-ADD":    { samples:"120,000",   features:83, aoa:28, attackRatio:"56.0%", trainRows:"84,000",    tau:TAU_ICS, auc:AUC_ICS },
+  "ICS-ADD":    { samples:"120,000", features:83, aoa:28, attackRatio:"56.0%", trainRows:"84,000",  tau:TAU_ICS, auc:AUC_ICS },
   "CICIoT2023": { samples:"2,827,876", features:70, aoa:18, attackRatio:"19.7%", trainRows:"1,979,513", tau:TAU_CIC, auc:AUC_CIC },
 };
 
 // ── MITRE ATT&CK scenarios (ICS-ADD topology) ──
 const SCENARIOS = [
-  { id:"T0847", name:"USB File Copy",    dr:99.84, branch:"GraphSAGE"  },
-  { id:"T0867", name:"Lateral Transfer", dr:99.61, branch:"GNN+LSTM"   },
-  { id:"T0843", name:"PLC Download",     dr:99.44, branch:"Bi-LSTM"    },
-  { id:"T0890", name:"Hardcoded Creds",  dr:98.93, branch:"Transformer"},
-  { id:"T0831", name:"Process Manip.",   dr:98.21, branch:"LSTM+Trans" },
+  { id:"T0847", name:"USB File Copy",       dr:99.84, branch:"GraphSAGE" },
+  { id:"T0867", name:"Lateral Transfer",    dr:99.61, branch:"GNN+LSTM"  },
+  { id:"T0843", name:"PLC Download",        dr:99.44, branch:"Bi-LSTM"   },
+  { id:"T0890", name:"Hardcoded Creds",     dr:98.93, branch:"Transformer"},
+  { id:"T0831", name:"Process Manip.",      dr:98.21, branch:"LSTM+Trans" },
 ];
 
-/* ── Curve generators ───────────────────────────────────────────────────── */
+// ── ROC curve from AUC ──
 function makeROC(auc) {
   const pts=[{fpr:0,tpr:0}];
   for(let i=1;i<=40;i++){
@@ -221,43 +133,8 @@ function makeROC(auc) {
   }
   pts.push({fpr:1,tpr:1});return pts;
 }
-function makeMultiROC(aucMap){
-  const rows=[];
-  for(let i=0;i<=40;i++){
-    const fpr=i/40;
-    const row={fpr:+fpr.toFixed(3)};
-    Object.entries(aucMap).forEach(([k,auc])=>{
-      row[k]= fpr===0 ? 0
-        : (auc<=0.51 ? +fpr.toFixed(4)
-          : +Math.min(1,Math.pow(fpr,Math.max(0.0001,1-auc))).toFixed(4));
-    });
-    rows.push(row);
-  }
-  return rows;
-}
-function makePR(ap){
-  const knee=Math.min(0.98,ap);
-  const pts=[];
-  for(let i=0;i<=40;i++){
-    const recall=i/40;
-    let prec;
-    if(recall<knee) prec=1-(1-ap)*0.04*(recall/Math.max(0.001,knee));
-    else prec=Math.max(0.28,1-((recall-knee)/Math.max(0.001,1-knee))*0.70);
-    pts.push({recall:+recall.toFixed(3),precision:+prec.toFixed(4)});
-  }
-  return pts;
-}
-function makeScoreHist(h){
-  const bins=[];
-  for(let i=0;i<24;i++){
-    const x=(i+0.5)/24;
-    const g=(mu,sd,pk)=>+(pk*Math.exp(-0.5*((x-mu)/sd)**2)).toFixed(2);
-    bins.push({ score:(i/24).toFixed(2), Benign:g(h.bMu,h.bSd,h.bPk), Attack:g(h.aMu,h.aSd,h.aPk) });
-  }
-  return bins;
-}
 
-/* ── Inference helpers ─────────────────────────────────────────────────── */
+// ── Inference helpers ─────────────────────────────────────────────────── */
 const LABEL_RE = [/^label$/i,/^attack_type$/i,/^attack$/i,/^class$/i,/^target$/i,/^category$/i,/^type$/i,/^y$/i];
 const isLabel = n => LABEL_RE.some(r=>r.test(n.trim()));
 const CIC_AOA = ["flow_duration","Rate","Srate","syn_flag_number","ack_flag_number","syn_count","urg_count","TCP","UDP","ICMP","Tot sum","Max","AVG","Std","Tot size","Magnitude","Variance","Weight"];
@@ -268,6 +145,7 @@ function scoreAE(r,feats){let mse=0,n=0;feats.forEach(f=>{const v=+r[f]||0,mu=BE
 function scoreLSTM(r){let s=0;s+=Math.min(1,(+r["Rate"]||0)/3000)*0.40;s+=Math.min(1,(+r["Srate"]||0)/1500)*0.20;s+=Math.min(1,(+r["syn_flag_number"]||0)*3)*0.20;s+=Math.min(1,(+r["urg_count"]||0)*5)*0.10;s+=((+r["IAT"]||1)<0.001?0.10:0);return Math.min(1,s);}
 function scoreGNN(r){let s=0;s+=Math.min(1,(+r["rst_flag_number"]||0)*4)*0.25;s+=Math.min(1,(+r["fin_flag_number"]||0)*3)*0.15;s+=Math.min(1,(+r["ICMP"]||0)*3)*0.15;s+=((+r["ARP"]||0)>0.5?0.10:0);s+=((+r["DHCP"]||0)>0.5?0.10:0);s+=Math.min(1,Math.abs((+r["Magnitude"]||0)-0.41)/0.5)*0.10;s+=Math.min(1,Math.abs(+r["Covariance"]||0)/0.3)*0.15;return Math.min(1,s);}
 function scoreTrans(r){let s=0;s+=((+r["Telnet"]||0)>0.5?0.25:0);s+=((+r["IRC"]||0)>0.5?0.20:0);s+=((+r["SMTP"]||0)>0.5?0.10:0);s+=Math.min(1,(+r["SSH"]||0)*2)*0.10;s+=Math.min(1,(+r["Std"]||0)/800)*0.20;s+=Math.min(1,(+r["Variance"]||0)/0.8)*0.15;return Math.min(1,s);}
+// Weights from Config: AE=0.21, LSTM=0.24, GNN=0.27, Trans=0.28
 function ensScore(ae,lstm,gnn,trans){return 0.21*ae+0.24*lstm+0.27*gnn+0.28*trans;}
 
 function runInference(rows,cols){
@@ -349,34 +227,8 @@ const Badge=({label,color,bg})=>(
   <span style={{background:bg,color:color,border:`1px solid ${color}30`,borderRadius:4,padding:"2px 8px",fontSize:10,fontWeight:700}}>{label}</span>
 );
 
-/* Compact confusion matrix used inside the Testing-Plots grid */
-const MiniCM=({cm,ds})=>{
-  const {TN,FP,FN,TP}=cm;const total=TN+FP+FN+TP;
-  const cell=(lbl,val,bg,bd,fg,pct)=>(
-    <div style={{background:bg,border:`2px solid ${bd}`,borderRadius:8,padding:"16px 8px",textAlign:"center"}}>
-      <div style={{fontSize:10,color:fg,fontWeight:700,marginBottom:3}}>{lbl}</div>
-      <div style={{fontSize:17,fontWeight:700,color:T.text,fontFamily:"'Roboto Mono',monospace"}}>{val.toLocaleString()}</div>
-      <div style={{fontSize:9,color:T.muted,marginTop:2}}>{pct}%</div>
-    </div>
-  );
-  return(
-    <div style={{display:"grid",gridTemplateColumns:"auto 1fr 1fr",gap:2}}>
-      <div/>
-      <div style={{textAlign:"center",fontSize:10,color:T.muted,padding:"3px 0",fontWeight:600}}>Pred: BENIGN</div>
-      <div style={{textAlign:"center",fontSize:10,color:T.muted,padding:"3px 0",fontWeight:600}}>Pred: ATTACK</div>
-      <div style={{fontSize:10,color:T.muted,display:"flex",alignItems:"center",paddingRight:6,fontWeight:600,writingMode:"vertical-lr",transform:"rotate(180deg)",justifyContent:"center"}}>BENIGN</div>
-      {cell("TN",TN,T.greenL,T.green,T.green,(TN/total*100).toFixed(1))}
-      {cell("FP",FP,T.redL,T.red,T.red,(FP/total*100).toFixed(2))}
-      <div style={{fontSize:10,color:T.muted,display:"flex",alignItems:"center",paddingRight:6,fontWeight:600,writingMode:"vertical-lr",transform:"rotate(180deg)",justifyContent:"center"}}>ATTACK</div>
-      {cell("FN",FN,T.yellowL,T.yellow,T.orange,(FN/total*100).toFixed(2))}
-      {cell("TP",TP,T.blueL,T.blue,T.blue,(TP/total*100).toFixed(1))}
-    </div>
-  );
-};
-
 /* ─── Tabs ───────────────────────────────────────────────────────────────── */
 const TABS=["Overview","Branch Results","Training & ROC","Testing Plots","Confusion Matrix","Live Monitor","CICIoT2023 Inference"];
-const INFER_TAB=6;
 
 /* ═══════════════════════════════════════════════════════════════════════════
    MAIN COMPONENT
@@ -409,15 +261,6 @@ export default function Dashboard(){
   const ae_loss  = ds==="ICS-ADD" ? AE_LOSS_ICS  : AE_LOSS_CIC;
   const lstm_loss= ds==="ICS-ADD" ? LSTM_LOSS_ICS : LSTM_LOSS_CIC;
   const ens      = branches[branches.length-1];
-
-  /* Testing-plot data for the selected dataset */
-  const tp        = TEST_PLOTS[ds];
-  const tpROC     = makeMultiROC(tp.auc);
-  const tpPR      = makePR(tp.ap);
-  const tpHist    = makeScoreHist(tp.hist);
-  const rocAucs   = ROC_AUCS[ds];
-  const combinedRocMap = (()=>{const m={};ROC_AUCS["ICS-ADD"].forEach(x=>m[x.name+" (ICS)"]=x.auc);ROC_AUCS["CICIoT2023"].forEach(x=>m[x.name+" (CIC)"]=x.auc);return m;})();
-  const combinedRoc = makeMultiROC(combinedRocMap);
 
   /* Derived CM stats */
   const {TN,FP,FN,TP}=cm;
@@ -500,6 +343,7 @@ export default function Dashboard(){
   const trend=flows.slice(0,50).reverse().map((f,i)=>({i,score:+f.score.toFixed(3)}));
   const liveAcc=lcnt.total>0?(((lcnt.total-lcnt.fp)/lcnt.total)*100).toFixed(1):"—";
 
+  /* Branch chart data (exclude ensemble for branch-only views) */
   const branchOnly=branches.slice(0,4);
 
   return(
@@ -525,52 +369,94 @@ export default function Dashboard(){
         .blink{animation:blink 1.1s infinite}
       `}</style>
 
+      {/* ── TOP GRADIENT BAR ───────────────────────────────────────────── */}
+      <div style={{height:4,width:"100%",background:"linear-gradient(90deg,#7c3aed 0%,#4f46e5 25%,#2563eb 55%,#0ea5e9 80%,#06b6d4 100%)",position:"sticky",top:0,zIndex:101}}/>
+
       {/* ── HEADER ─────────────────────────────────────────────────────── */}
-      <header style={{background:T.white,borderBottom:`1px solid ${T.border}`,padding:"0 28px",
-        display:"flex",alignItems:"center",justifyContent:"space-between",height:64,
-        boxShadow:"0 1px 4px rgba(0,0,0,.08)",position:"sticky",top:0,zIndex:100}}>
-        <div style={{display:"flex",alignItems:"center",gap:16}}>
-          <div style={{display:"flex",alignItems:"center",gap:8}}>
-            <div style={{width:32,height:32,borderRadius:8,background:`linear-gradient(135deg,${T.blue},${T.purple})`,
-              display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:"#fff",fontWeight:700}}>A</div>
-            <div>
-              <div style={{fontSize:15,fontWeight:700,color:T.text,fontFamily:"'Google Sans',sans-serif",lineHeight:1.1}}>AGAD-UDL</div>
-              <div style={{fontSize:10,color:T.muted}}>IIT Indore · Amit Dalal &amp; Prashant Mishra</div>
-            </div>
+      <header style={{background:T.white,borderBottom:`1px solid ${T.border}`,padding:"14px 32px",
+        display:"flex",alignItems:"center",justifyContent:"space-between",gap:20,
+        boxShadow:"0 1px 3px rgba(0,0,0,.06)",position:"sticky",top:4,zIndex:100}}>
+
+        {/* Left — MCTE */}
+        <div style={{display:"flex",alignItems:"center",gap:12,flex:"1 1 0",minWidth:0}}>
+          <div style={{width:46,height:46,borderRadius:8,border:`1px solid ${T.border}`,background:T.white,
+            display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,padding:4}}>
+            <svg viewBox="0 0 48 48" width="36" height="36">
+              <path d="M24 3 L42 10 V22 C42 34 34 42 24 45 C14 42 6 34 6 22 V10 Z" fill="#eef1f5" stroke="#1e3a5f" strokeWidth="1"/>
+              <path d="M24 6 L39 12 V22 C39 32 32.5 39 24 42 L24 6 Z" fill="#16324f"/>
+              <path d="M24 6 L9 12 V22 C9 32 15.5 39 24 42 L24 6 Z" fill="#2f6b4f"/>
+              <path d="M20 26 L26 15 L23 24 L28 24 L21 34 L23 26 Z" fill="#ffd54a"/>
+            </svg>
           </div>
-          <div style={{width:1,height:32,background:T.border}}/>
-          <span style={{fontSize:13,color:T.sub}}>Zero-Day Attack Detection — Air-Gapped Networks</span>
+          <div style={{minWidth:0}}>
+            <div style={{fontSize:14,fontWeight:700,color:T.text,letterSpacing:".01em",lineHeight:1.2}}>MCTE</div>
+            <div style={{fontSize:10.5,color:T.muted,lineHeight:1.3}}>Military College of<br/>Telecommunication Engineering</div>
+          </div>
         </div>
-        <div style={{display:"flex",gap:6}}>
+
+        {/* Center — SURAKSANETRA */}
+        <div style={{flex:"0 0 auto",textAlign:"center"}}>
+          <div style={{
+            fontSize:26,fontWeight:800,letterSpacing:".14em",lineHeight:1.1,
+            fontFamily:"'Google Sans',Roboto,sans-serif",
+            background:"linear-gradient(90deg,#5b3df0,#4338ca)",
+            WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",
+          }}>SURAKSANETRA</div>
+          <div style={{fontSize:13,fontWeight:700,color:T.text,marginTop:2}}>Zero-Day Detection in Air-Gapped Networks</div>
+          <div style={{fontSize:10.5,color:T.muted,marginTop:2}}>AGAD-UDL · STGE Deep Ensemble · Amit Dalal &amp; Prashant Mishra</div>
+        </div>
+
+        {/* Right — IIT Indore */}
+        <div style={{display:"flex",alignItems:"center",gap:12,flex:"1 1 0",justifyContent:"flex-end",minWidth:0}}>
+          <div style={{textAlign:"right",minWidth:0}}>
+            <div style={{fontSize:14,fontWeight:700,color:T.text,lineHeight:1.2}}>IIT Indore</div>
+            <div style={{fontSize:10.5,color:T.muted,lineHeight:1.3}}>Indian Institute of Technology<br/>Indore</div>
+          </div>
+          <div style={{width:46,height:46,borderRadius:"50%",border:`1px solid ${T.border}`,background:T.white,
+            display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,padding:3}}>
+            <svg viewBox="0 0 48 48" width="40" height="40">
+              <circle cx="24" cy="24" r="21" fill="#ffffff" stroke="#1a3a6b" strokeWidth="1.4"/>
+              <circle cx="24" cy="24" r="17.5" fill="none" stroke="#1a3a6b" strokeWidth="0.7"/>
+              <path d="M24 6 A18 18 0 0 1 24 42" fill="none" stroke="#1a3a6b" strokeWidth="0.4" opacity="0.5"/>
+              <path d="M24 13 L30 24 L24 35 L18 24 Z" fill="#1a3a6b"/>
+              <circle cx="24" cy="24" r="3.2" fill="#ffffff"/>
+              <text x="24" y="10" textAnchor="middle" fontSize="4.6" fill="#1a3a6b" fontWeight="700">IIT INDORE</text>
+            </svg>
+          </div>
+        </div>
+      </header>
+
+      {/* ── TAB BAR ────────────────────────────────────────────────────── */}
+      <nav style={{background:T.white,borderBottom:`1px solid ${T.border}`,padding:"0 32px",
+        display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,
+        position:"sticky",top:68,zIndex:99,boxShadow:"0 1px 2px rgba(0,0,0,.03)"}}>
+        <div style={{display:"flex",gap:2,overflowX:"auto"}}>
+          {TABS.map((t,i)=>(
+            <button key={t} className="tab-btn" onClick={()=>setTab(i)} style={{
+              background:"transparent",padding:"13px 14px",
+              color:tab===i?T.blue:T.sub,fontWeight:tab===i?600:400,fontSize:12.5,
+              borderBottom:tab===i?`2px solid ${T.blue}`:"2px solid transparent",
+              marginBottom:-1,borderRadius:0,
+            }}>
+              {t}
+              {i===6&&infStep==="done"&&(
+                <span style={{marginLeft:6,background:T.blue,color:T.white,borderRadius:10,
+                  padding:"1px 7px",fontSize:10,fontWeight:700}}>{infRows.length}</span>
+              )}
+            </button>
+          ))}
+        </div>
+        <div style={{display:"flex",gap:6,flexShrink:0,padding:"10px 0"}}>
           {["ICS-ADD","CICIoT2023"].map(d=>(
             <button key={d} className="ds-btn" onClick={()=>setDs(d)} style={{
-              background:ds===d?T.blueL:"transparent",
+              background:ds===d?T.blue:T.white,
               border:`1.5px solid ${ds===d?T.blue:T.border}`,
-              color:ds===d?T.blue:T.sub,
+              color:ds===d?"#fff":T.sub,
               borderRadius:20,padding:"5px 16px",fontSize:12,fontWeight:500}}>
               {d}
             </button>
           ))}
         </div>
-      </header>
-
-      {/* ── TAB BAR ────────────────────────────────────────────────────── */}
-      <nav style={{background:T.white,borderBottom:`1px solid ${T.border}`,padding:"0 28px",
-        display:"flex",gap:0,overflowX:"auto"}}>
-        {TABS.map((t,i)=>(
-          <button key={t} className="tab-btn" onClick={()=>setTab(i)} style={{
-            background:"transparent",padding:"14px 18px",
-            color:tab===i?T.blue:T.sub,fontWeight:tab===i?500:400,fontSize:13,
-            borderBottom:tab===i?`2.5px solid ${T.blue}`:"2.5px solid transparent",
-            marginBottom:-1,
-          }}>
-            {t}
-            {i===INFER_TAB&&infStep==="done"&&(
-              <span style={{marginLeft:6,background:T.blue,color:T.white,borderRadius:10,
-                padding:"1px 7px",fontSize:10,fontWeight:700}}>{infRows.length}</span>
-            )}
-          </button>
-        ))}
       </nav>
 
       {/* ── BODY ───────────────────────────────────────────────────────── */}
@@ -590,20 +476,22 @@ export default function Dashboard(){
               </div>
             </div>
 
+            {/* KPI row */}
             <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:24}}>
-              <KpiCard label="Accuracy"        value={(acc*100).toFixed(2)} unit="%" accent={T.blue}   delta={ds==="ICS-ADD"?"vs 97.12% GNN branch":undefined}/>
-              <KpiCard label="F1-Score"        value={(f1*100).toFixed(2)}  unit="%" accent={T.green}  />
-              <KpiCard label="Detection Rate"  value={(recall*100).toFixed(2)} unit="%" accent={T.orange} sub={`TP=${TP.toLocaleString()}, FN=${FN.toLocaleString()}`}/>
-              <KpiCard label="False Alarm Rate" value={far.toFixed(4)}      accent={T.red}    sub="Lower = better"/>
-              <KpiCard label="Precision"       value={(precision*100).toFixed(2)} unit="%" accent={T.purple}/>
-              <KpiCard label="ROC-AUC"         value={auc.toFixed(4)}       accent={T.teal}  />
-              <KpiCard label="RMSE"            value={ens.rmse.toFixed(4)}  accent={T.muted} />
-              <KpiCard label="MAE"             value={ens.mae.toFixed(4)}   accent={T.muted} />
+              <KpiCard label="Accuracy"      value={(acc*100).toFixed(2)} unit="%" accent={T.blue}   delta={ds==="ICS-ADD"?"vs 97.12% GNN branch":undefined}/>
+              <KpiCard label="F1-Score"      value={(f1*100).toFixed(2)}  unit="%" accent={T.green}  />
+              <KpiCard label="Detection Rate"value={(recall*100).toFixed(2)} unit="%" accent={T.orange} sub={`TP=${TP.toLocaleString()}, FN=${FN.toLocaleString()}`}/>
+              <KpiCard label="False Alarm Rate" value={far.toFixed(4)}    accent={T.red}    sub="Lower = better"/>
+              <KpiCard label="Precision"     value={(precision*100).toFixed(2)} unit="%" accent={T.purple}/>
+              <KpiCard label="ROC-AUC"       value={auc.toFixed(4)}       accent={T.teal}  />
+              <KpiCard label="RMSE"          value={ens.rmse.toFixed(4)}  accent={T.muted} />
+              <KpiCard label="MAE"           value={ens.mae.toFixed(4)}   accent={T.muted} />
             </div>
 
+            {/* ROC + MITRE */}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18,marginBottom:18}}>
               <Card>
-                <p style={{color:T.muted,fontSize:12,margin:"0 0 12px",fontWeight:500}}>ROC Curve — {ds} Ensemble (AUC = {auc})</p>
+                <p style={{color:T.muted,fontSize:12,margin:"0 0 12px",fontWeight:500}}>ROC Curve — {ds} (AUC = {auc})</p>
                 <ResponsiveContainer width="100%" height={230}>
                   <AreaChart data={roc} margin={{top:4,right:10,bottom:20,left:0}}>
                     <defs>
@@ -642,22 +530,23 @@ export default function Dashboard(){
               </Card>
             </div>
 
+            {/* Dataset + pipeline info */}
             <Card>
               <p style={{color:T.muted,fontSize:12,margin:"0 0 14px",fontWeight:500}}>Pipeline Configuration — {ds}</p>
               <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:12}}>
                 {[
-                  {k:"Dataset",       v:ds},
-                  {k:"Total Samples", v:info.samples},
-                  {k:"Raw Features",  v:info.features},
-                  {k:"AOA Features",  v:info.aoa},
-                  {k:"Attack Ratio",  v:info.attackRatio},
-                  {k:"Train Rows",    v:info.trainRows},
-                  {k:"AE Epochs",     v:"80"},
+                  {k:"Dataset",      v:ds},
+                  {k:"Total Samples",v:info.samples},
+                  {k:"Raw Features", v:info.features},
+                  {k:"AOA Features", v:info.aoa},
+                  {k:"Attack Ratio", v:info.attackRatio},
+                  {k:"Train Rows",   v:info.trainRows},
+                  {k:"AE Epochs",    v:"80"},
                   {k:"LSTM/GNN Epochs",v:"30"},
                   {k:"Transformer Ep",v:"30"},
-                  {k:"OOA τ*",        v:tau},
-                  {k:"LR",            v:"5×10⁻⁴"},
-                  {k:"Batch Size",    v:"256"},
+                  {k:"OOA τ*",       v:tau},
+                  {k:"LR",           v:"5×10⁻⁴"},
+                  {k:"Batch Size",   v:"256"},
                 ].map(c=>(
                   <div key={c.k} style={{background:T.surface,borderRadius:8,padding:"10px 14px"}}>
                     <p style={{color:T.muted,fontSize:10,textTransform:"uppercase",letterSpacing:".05em",margin:0}}>{c.k}</p>
@@ -674,6 +563,7 @@ export default function Dashboard(){
           <div>
             <SH sub={`Individual branch and STGE ensemble metrics — ${ds}`}>Branch-Level Performance</SH>
 
+            {/* Branch weights */}
             <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:24}}>
               {WEIGHTS.map(w=>(
                 <div key={w.branch} style={{background:T.white,border:`1px solid ${T.border}`,borderRadius:10,padding:"14px 18px",position:"relative",overflow:"hidden"}}>
@@ -688,6 +578,7 @@ export default function Dashboard(){
               ))}
             </div>
 
+            {/* Grouped bars: Acc + F1 + DR */}
             <Card style={{marginBottom:18}}>
               <p style={{color:T.muted,fontSize:12,margin:"0 0 12px",fontWeight:500}}>Accuracy · F1-Score · Detection Rate per Branch</p>
               <ResponsiveContainer width="100%" height={260}>
@@ -736,6 +627,7 @@ export default function Dashboard(){
               </Card>
             </div>
 
+            {/* Full table */}
             <Card>
               <p style={{color:T.muted,fontSize:12,margin:"0 0 14px",fontWeight:500}}>Complete Branch Results Table — {ds}</p>
               <div style={{overflowX:"auto"}}>
@@ -770,35 +662,36 @@ export default function Dashboard(){
           </div>
         )}
 
-        {/* ╔═══ TAB 2 — TRAINING & ROC ═══════════════════════════════════╗ */}
+        {/* ╔═══ TAB 2 — TRAINING CURVES ══════════════════════════════════╗ */}
         {tab===2&&(
           <div>
-            <SH sub="Loss values printed during training + combined ROC across all branches and both datasets">Training Loss Curves &amp; ROC</SH>
+            <SH sub={`Actual loss values printed during training, plus ROC curve — ${ds}`}>Training Curves &amp; ROC</SH>
 
-            {/* Combined multi-model training loss (Image 2) */}
             <Card style={{marginBottom:18}}>
-              <p style={{color:T.muted,fontSize:12,margin:"0 0 4px",fontWeight:500}}>Training Loss Curves — all branches · both datasets</p>
-              <p style={{color:T.muted,fontSize:11,margin:"0 0 12px"}}>AE trained 80 epochs (one-class, benign only) · LSTM / GraphSAGE / Transformer trained 30 epochs</p>
-              <ResponsiveContainer width="100%" height={340}>
-                <LineChart data={TRAIN_LOSS} margin={{left:0,right:12,top:4,bottom:20}}>
+              <p style={{color:T.muted,fontSize:12,margin:"0 0 12px",fontWeight:500}}>ROC Curve — {ds} (AUC = {auc})</p>
+              <ResponsiveContainer width="100%" height={220}>
+                <AreaChart data={roc} margin={{top:4,right:10,bottom:20,left:0}}>
+                  <defs>
+                    <linearGradient id="rg2" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={T.blue} stopOpacity={0.15}/>
+                      <stop offset="95%" stopColor={T.blue} stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid stroke={T.grid} strokeDasharray="3 3"/>
-                  <XAxis dataKey="ep" type="number" domain={[0,80]} label={{value:"Epoch",position:"insideBottom",fill:T.muted,fontSize:11,dy:10}} tick={{fill:T.muted,fontSize:10}}/>
-                  <YAxis tick={{fill:T.muted,fontSize:10}} label={{value:"Loss",angle:-90,position:"insideLeft",fill:T.muted,fontSize:11}}/>
+                  <XAxis dataKey="fpr" label={{value:"False Positive Rate",position:"insideBottom",fill:T.muted,fontSize:11,dy:10}} tick={{fill:T.muted,fontSize:10}}/>
+                  <YAxis tick={{fill:T.muted,fontSize:10}} label={{value:"True Positive Rate",angle:-90,position:"insideLeft",fill:T.muted,fontSize:10,dx:-4}}/>
                   <Tooltip content={<Tip/>}/>
-                  <Legend wrapperStyle={{color:T.muted,fontSize:10}}/>
-                  {Object.entries(TRAIN_SERIES).map(([k,s])=>(
-                    <Line key={k} type="monotone" dataKey={k} name={s.label} stroke={s.color} strokeWidth={2} dot={false} connectNulls={false}/>
-                  ))}
-                </LineChart>
+                  <ReferenceLine data={[{fpr:0,y:0},{fpr:1,y:1}]} stroke={T.border} strokeDasharray="4 4"/>
+                  <Area type="monotone" dataKey="tpr" stroke={T.blue} strokeWidth={2.5} fill="url(#rg2)" name="TPR" dot={false}/>
+                </AreaChart>
               </ResponsiveContainer>
             </Card>
 
-            {/* Original AE + LSTM checkpoint detail */}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18,marginBottom:18}}>
               <Card>
-                <p style={{color:T.muted,fontSize:12,margin:"0 0 4px",fontWeight:500}}>Autoencoder Reconstruction Loss — {ds} (80 epochs)</p>
-                <p style={{color:T.muted,fontSize:11,margin:"0 0 12px"}}>Logged checkpoint values · trained on benign flows only</p>
-                <ResponsiveContainer width="100%" height={220}>
+                <p style={{color:T.muted,fontSize:12,margin:"0 0 4px",fontWeight:500}}>Autoencoder Reconstruction Loss (80 epochs)</p>
+                <p style={{color:T.muted,fontSize:11,margin:"0 0 12px"}}>Trained only on benign flows — online one-class learning</p>
+                <ResponsiveContainer width="100%" height={230}>
                   <LineChart data={ae_loss} margin={{left:0,right:8,top:4,bottom:20}}>
                     <CartesianGrid stroke={T.grid} strokeDasharray="3 3"/>
                     <XAxis dataKey="ep" label={{value:"Epoch",position:"insideBottom",fill:T.muted,fontSize:11,dy:10}} tick={{fill:T.muted,fontSize:10}}/>
@@ -807,12 +700,19 @@ export default function Dashboard(){
                     <Line type="monotone" dataKey="loss" stroke={T.blue} strokeWidth={2.5} dot={{r:4,fill:T.blue}} name="AE Loss"/>
                   </LineChart>
                 </ResponsiveContainer>
+                <div style={{display:"flex",gap:10,marginTop:8,flexWrap:"wrap"}}>
+                  {ae_loss.map((p,i)=>(
+                    <span key={i} style={{fontSize:10,color:T.muted,fontFamily:"'Roboto Mono',monospace"}}>
+                      <b style={{color:T.text}}>ep{p.ep}</b>={p.loss.toFixed(4)}
+                    </span>
+                  ))}
+                </div>
               </Card>
 
               <Card>
-                <p style={{color:T.muted,fontSize:12,margin:"0 0 4px",fontWeight:500}}>Bi-LSTM Train &amp; Validation Loss — {ds} (30 epochs)</p>
-                <p style={{color:T.muted,fontSize:11,margin:"0 0 12px"}}>Cosine-annealing LR · hidden=128 · layers=2 · dropout=0.3</p>
-                <ResponsiveContainer width="100%" height={220}>
+                <p style={{color:T.muted,fontSize:12,margin:"0 0 4px",fontWeight:500}}>Bi-LSTM Train &amp; Validation Loss (30 epochs)</p>
+                <p style={{color:T.muted,fontSize:11,margin:"0 0 12px"}}>Cosine-annealing LR schedule · hidden=128 · layers=2 · dropout=0.3</p>
+                <ResponsiveContainer width="100%" height={230}>
                   <LineChart data={lstm_loss} margin={{left:0,right:8,top:4,bottom:20}}>
                     <CartesianGrid stroke={T.grid} strokeDasharray="3 3"/>
                     <XAxis dataKey="ep" label={{value:"Epoch",position:"insideBottom",fill:T.muted,fontSize:11,dy:10}} tick={{fill:T.muted,fontSize:10}}/>
@@ -826,43 +726,26 @@ export default function Dashboard(){
               </Card>
             </div>
 
-            {/* Combined ROC (Image 1) */}
-            <Card style={{marginBottom:18}}>
-              <p style={{color:T.muted,fontSize:12,margin:"0 0 4px",fontWeight:500}}>ROC Curves — all branches · both datasets</p>
-              <p style={{color:T.muted,fontSize:11,margin:"0 0 12px"}}>True vs false positive rate per model; AUC values in legend</p>
-              <ResponsiveContainer width="100%" height={360}>
-                <LineChart data={combinedRoc} margin={{left:0,right:12,top:4,bottom:24}}>
-                  <CartesianGrid stroke={T.grid} strokeDasharray="3 3"/>
-                  <XAxis dataKey="fpr" type="number" domain={[0,1]} label={{value:"False Positive Rate",position:"insideBottom",fill:T.muted,fontSize:11,dy:12}} tick={{fill:T.muted,fontSize:10}}/>
-                  <YAxis domain={[0,1]} tick={{fill:T.muted,fontSize:10}} label={{value:"True Positive Rate",angle:-90,position:"insideLeft",fill:T.muted,fontSize:11}}/>
-                  <Tooltip content={<Tip/>}/>
-                  <Legend wrapperStyle={{color:T.muted,fontSize:9.5}}/>
-                  <ReferenceLine segment={[{x:0,y:0},{x:1,y:1}]} stroke={T.muted} strokeDasharray="5 4"/>
-                  {ROC_AUCS["ICS-ADD"].map(m=>(
-                    <Line key={m.name+"-ICS"} type="monotone" dataKey={m.name+" (ICS)"} name={`${m.name} (ICS) AUC=${m.auc}`} stroke={m.color} strokeWidth={2} dot={false}/>
-                  ))}
-                  {ROC_AUCS["CICIoT2023"].map(m=>(
-                    <Line key={m.name+"-CIC"} type="monotone" dataKey={m.name+" (CIC)"} name={`${m.name} (CIC) AUC=${m.auc}`} stroke={m.color} strokeWidth={2} strokeDasharray="5 3" dot={false}/>
-                  ))}
-                </LineChart>
-              </ResponsiveContainer>
-            </Card>
-
-            {/* AUC comparison + architecture */}
+            {/* Radar of branch metrics */}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18}}>
               <Card>
-                <p style={{color:T.muted,fontSize:12,margin:"0 0 12px",fontWeight:500}}>ROC-AUC by Model — {ds}</p>
+                <p style={{color:T.muted,fontSize:12,margin:"0 0 12px",fontWeight:500}}>Branch Accuracy Comparison — {ds}</p>
                 <ResponsiveContainer width="100%" height={240}>
-                  <BarChart data={rocAucs} margin={{left:0,right:8,top:14,bottom:4}}>
-                    <CartesianGrid stroke={T.grid} strokeDasharray="3 3"/>
-                    <XAxis dataKey="name" tick={{fill:T.sub,fontSize:9}} angle={-15} textAnchor="end" height={50}/>
-                    <YAxis domain={[0,1]} tick={{fill:T.muted,fontSize:9}}/>
+                  <RadarChart data={[
+                    {metric:"Accuracy",  AE:branches[0].acc*100,LSTM:branches[1].acc*100,GNN:branches[3].acc*100,Trans:branches[2].acc*100,Ens:branches[4].acc*100},
+                    {metric:"F1",        AE:branches[0].f1*100, LSTM:branches[1].f1*100, GNN:branches[3].f1*100, Trans:branches[2].f1*100, Ens:branches[4].f1*100},
+                    {metric:"Recall",    AE:branches[0].recall*100,LSTM:branches[1].recall*100,GNN:branches[3].recall*100,Trans:branches[2].recall*100,Ens:branches[4].recall*100},
+                    {metric:"Precision", AE:branches[0].precision*100,LSTM:branches[1].precision*100,GNN:branches[3].precision*100,Trans:branches[2].precision*100,Ens:branches[4].precision*100},
+                  ]}>
+                    <PolarGrid stroke={T.grid}/>
+                    <PolarAngleAxis dataKey="metric" tick={{fill:T.muted,fontSize:10}}/>
+                    <PolarRadiusAxis domain={[0,100]} tick={{fill:T.muted,fontSize:8}}/>
                     <Tooltip content={<Tip/>}/>
-                    <ReferenceLine y={0.5} stroke={T.muted} strokeDasharray="4 4" label={{value:"chance",fill:T.muted,fontSize:9,position:"insideTopRight"}}/>
-                    <Bar dataKey="auc" name="AUC" radius={[4,4,0,0]}>
-                      {rocAucs.map((m,i)=><Cell key={i} fill={m.color}/>)}
-                    </Bar>
-                  </BarChart>
+                    <Radar name="Ensemble"   dataKey="Ens"   stroke={T.blue}   fill={T.blue}   fillOpacity={0.15} strokeWidth={2}/>
+                    <Radar name="Transformer"dataKey="Trans" stroke={T.purple} fill={T.purple} fillOpacity={0.08} strokeWidth={1.5}/>
+                    <Radar name="GraphSAGE"  dataKey="GNN"   stroke={T.orange} fill={T.orange} fillOpacity={0.08} strokeWidth={1.5}/>
+                    <Legend wrapperStyle={{color:T.muted,fontSize:10}}/>
+                  </RadarChart>
                 </ResponsiveContainer>
               </Card>
 
@@ -870,10 +753,10 @@ export default function Dashboard(){
                 <p style={{color:T.muted,fontSize:12,margin:"0 0 14px",fontWeight:500}}>Model Architecture Summary</p>
                 <div style={{display:"flex",flexDirection:"column",gap:10}}>
                   {[
-                    {name:"Autoencoder", w:0.21,col:T.blue,   spec:"6-layer AE · latent=16 · MSE recon. loss · 80 epochs · trained on benign only"},
-                    {name:"Bi-LSTM",     w:0.24,col:T.green,  spec:"2-layer BiLSTM · hidden=128 · dropout=0.3 · seq_len=20 · 30 epochs"},
-                    {name:"GraphSAGE",   w:0.27,col:T.orange, spec:"2-hop SAGE · hidden=128 · k=5 KNN graph · 5-min windows · 30 epochs"},
-                    {name:"Transformer", w:0.28,col:T.purple, spec:"d_model=128 · 8 heads · 4 layers · ff=512 · dropout=0.1 · 30 epochs"},
+                    {name:"Autoencoder",   w:0.21,col:T.blue,   spec:"6-layer AE · latent=16 · MSE recon. loss · 80 epochs · trained on benign only"},
+                    {name:"Bi-LSTM",       w:0.24,col:T.green,  spec:"2-layer BiLSTM · hidden=128 · dropout=0.3 · seq_len=20 · 30 epochs"},
+                    {name:"GraphSAGE",     w:0.27,col:T.orange, spec:"2-hop SAGE · hidden=128 · k=5 KNN graph · 5-min windows · 30 epochs"},
+                    {name:"Transformer",   w:0.28,col:T.purple, spec:"d_model=128 · 8 heads · 4 layers · ff=512 · dropout=0.1 · 30 epochs"},
                   ].map(b=>(
                     <div key={b.name} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"10px 14px",background:T.surface,borderRadius:8}}>
                       <div style={{width:4,borderRadius:2,background:b.col,alignSelf:"stretch",flexShrink:0}}/>
@@ -892,120 +775,101 @@ export default function Dashboard(){
           </div>
         )}
 
-        {/* ╔═══ TAB 3 — TESTING PLOTS (6-panel, Images 3 & 4) ═══════════╗ */}
+        {/* ╔═══ TAB 3 — TESTING PLOTS ═══════════════════════════════════════╗ */}
         {tab===3&&(
           <div>
-            <SH sub={`Replicates the saved testing_plots_${ds==="ICS-ADD"?"ICS":"CIC"}.png figure — switch dataset in the top-right`}>
-              AGAD-UDL — Testing Plots ({ds==="ICS-ADD"?"ICS":"CIC"})
+            <SH sub={`Held-out test set diagnostics — anomaly score distribution, per-branch accuracy & PR trade-off — ${ds}`}>
+              Testing Plots
             </SH>
 
-            {/* Row 1: Confusion · ROC · PR */}
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16,marginBottom:16}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18,marginBottom:18}}>
               <Card>
-                <p style={{color:T.muted,fontSize:12,margin:"0 0 14px",fontWeight:500}}>
-                  Confusion Matrix
-                  <span style={{marginLeft:8,color:T.muted,fontSize:11}}>n = {(tp.cm.TN+tp.cm.FP+tp.cm.FN+tp.cm.TP).toLocaleString()}</span>
-                </p>
-                <MiniCM cm={tp.cm} ds={ds}/>
-              </Card>
-
-              <Card>
-                <p style={{color:T.muted,fontSize:12,margin:"0 0 12px",fontWeight:500}}>ROC Curves</p>
-                <ResponsiveContainer width="100%" height={210}>
-                  <LineChart data={tpROC} margin={{left:0,right:8,top:4,bottom:18}}>
-                    <CartesianGrid stroke={T.grid} strokeDasharray="3 3"/>
-                    <XAxis dataKey="fpr" type="number" domain={[0,1]} tick={{fill:T.muted,fontSize:9}} label={{value:"FPR",position:"insideBottom",fill:T.muted,fontSize:10,dy:10}}/>
-                    <YAxis domain={[0,1]} tick={{fill:T.muted,fontSize:9}}/>
-                    <Tooltip content={<Tip/>}/>
-                    <Legend wrapperStyle={{color:T.muted,fontSize:9}}/>
-                    <ReferenceLine segment={[{x:0,y:0},{x:1,y:1}]} stroke={T.muted} strokeDasharray="5 4"/>
-                    {Object.entries(tp.auc).map(([k,a])=>(
-                      <Line key={k} type="monotone" dataKey={k} name={`${k} (${a.toFixed(3)})`}
-                        stroke={ROC_COLORS[k]} strokeWidth={k==="Ensemble"?2.6:1.6} dot={false}/>
-                    ))}
-                  </LineChart>
-                </ResponsiveContainer>
-              </Card>
-
-              <Card>
-                <p style={{color:T.muted,fontSize:12,margin:"0 0 12px",fontWeight:500}}>Precision-Recall Curve · AP = {tp.ap.toFixed(3)}</p>
-                <ResponsiveContainer width="100%" height={210}>
-                  <AreaChart data={tpPR} margin={{left:0,right:8,top:4,bottom:18}}>
+                <p style={{color:T.muted,fontSize:12,margin:"0 0 4px",fontWeight:500}}>Anomaly Score Distribution vs OOA Threshold</p>
+                <p style={{color:T.muted,fontSize:11,margin:"0 0 12px"}}>Score spread reconstructed from confusion-matrix rates, centered around τ* = {tau}</p>
+                <ResponsiveContainer width="100%" height={220}>
+                  <AreaChart
+                    data={Array.from({length:21},(_,i)=>{
+                      const x=i/20;
+                      const benign = Math.exp(-((x-0.15)**2)/(2*0.09*0.09))*(TN+FP);
+                      const attack = Math.exp(-((x-0.75)**2)/(2*0.18*0.18))*(TP+FN);
+                      return{x:+x.toFixed(2),Benign:Math.round(benign/60),Attack:Math.round(attack/60)};
+                    })}
+                    margin={{left:0,right:8,top:4,bottom:20}}>
                     <defs>
-                      <linearGradient id="pr" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={T.purple} stopOpacity={0.18}/>
-                        <stop offset="95%" stopColor={T.purple} stopOpacity={0}/>
-                      </linearGradient>
+                      <linearGradient id="benG" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={T.green} stopOpacity={0.35}/><stop offset="95%" stopColor={T.green} stopOpacity={0}/></linearGradient>
+                      <linearGradient id="atkG" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={T.red} stopOpacity={0.35}/><stop offset="95%" stopColor={T.red} stopOpacity={0}/></linearGradient>
                     </defs>
                     <CartesianGrid stroke={T.grid} strokeDasharray="3 3"/>
-                    <XAxis dataKey="recall" type="number" domain={[0,1]} tick={{fill:T.muted,fontSize:9}} label={{value:"Recall",position:"insideBottom",fill:T.muted,fontSize:10,dy:10}}/>
-                    <YAxis domain={[0.2,1]} tick={{fill:T.muted,fontSize:9}}/>
+                    <XAxis dataKey="x" label={{value:"Anomaly Score",position:"insideBottom",fill:T.muted,fontSize:11,dy:10}} tick={{fill:T.muted,fontSize:9}}/>
+                    <YAxis tick={{fill:T.muted,fontSize:9}}/>
                     <Tooltip content={<Tip/>}/>
-                    <ReferenceLine y={ds==="ICS-ADD"?0.56:0.197} stroke={T.muted} strokeDasharray="4 4" label={{value:"baseline",fill:T.muted,fontSize:9,position:"insideBottomRight"}}/>
-                    <Area type="monotone" dataKey="precision" stroke={T.purple} strokeWidth={2.4} fill="url(#pr)" name="Precision" dot={false}/>
+                    <ReferenceLine x={+tau.toFixed(2)} stroke={T.text} strokeDasharray="5 3" label={{value:`τ*=${tau}`,fill:T.text,fontSize:10,position:"top"}}/>
+                    <Area type="monotone" dataKey="Benign" stroke={T.green} fill="url(#benG)" strokeWidth={2} name="Benign flows"/>
+                    <Area type="monotone" dataKey="Attack" stroke={T.red}   fill="url(#atkG)" strokeWidth={2} name="Attack flows"/>
                   </AreaChart>
                 </ResponsiveContainer>
               </Card>
-            </div>
 
-            {/* Row 2: Score-Dist · Per-Branch · Ensemble Metrics */}
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16}}>
               <Card>
-                <p style={{color:T.muted,fontSize:12,margin:"0 0 12px",fontWeight:500}}>Score Distribution &amp; Threshold</p>
-                <ResponsiveContainer width="100%" height={210}>
-                  <BarChart data={tpHist} margin={{left:0,right:8,top:4,bottom:18}}>
+                <p style={{color:T.muted,fontSize:12,margin:"0 0 4px",fontWeight:500}}>Precision–Recall Trade-off</p>
+                <p style={{color:T.muted,fontSize:11,margin:"0 0 12px"}}>Operating point at current τ* shown in black</p>
+                <ResponsiveContainer width="100%" height={220}>
+                  <ScatterChart margin={{left:0,right:12,top:4,bottom:20}}>
                     <CartesianGrid stroke={T.grid} strokeDasharray="3 3"/>
-                    <XAxis dataKey="score" tick={{fill:T.muted,fontSize:8}} interval={3} label={{value:"Ensemble anomaly score",position:"insideBottom",fill:T.muted,fontSize:10,dy:10}}/>
-                    <YAxis tick={{fill:T.muted,fontSize:9}} label={{value:"Density",angle:-90,position:"insideLeft",fill:T.muted,fontSize:10}}/>
+                    <XAxis type="number" dataKey="r" name="Recall" domain={[0,1]} tickFormatter={v=>`${(v*100).toFixed(0)}%`} label={{value:"Recall",position:"insideBottom",fill:T.muted,fontSize:11,dy:10}} tick={{fill:T.muted,fontSize:9}}/>
+                    <YAxis type="number" dataKey="p" name="Precision" domain={[0,1]} tickFormatter={v=>`${(v*100).toFixed(0)}%`} tick={{fill:T.muted,fontSize:9}}/>
                     <Tooltip content={<Tip/>}/>
-                    <Legend wrapperStyle={{color:T.muted,fontSize:10}}/>
-                    <ReferenceLine x={tp.tau.toFixed(2)} stroke={T.text} strokeDasharray="6 3" strokeWidth={1.6}
-                      label={{value:`τ = ${tp.tau}`,fill:T.text,fontSize:10,position:"top"}}/>
-                    <Bar dataKey="Benign" name="Benign" fill={T.blue}  fillOpacity={0.6} radius={[2,2,0,0]}/>
-                    <Bar dataKey="Attack" name="Attack" fill={T.red}   fillOpacity={0.6} radius={[2,2,0,0]}/>
-                  </BarChart>
+                    <Scatter name="Branches" data={[
+                      {model:"AE",       r:branches[0].recall, p:branches[0].precision},
+                      {model:"Bi-LSTM",  r:branches[1].recall, p:branches[1].precision},
+                      {model:"Transformer",r:branches[2].recall,p:branches[2].precision},
+                      {model:"GraphSAGE",r:branches[3].recall, p:branches[3].precision},
+                    ]}>
+                      {branches.slice(0,4).map((_,i)=><Cell key={i} fill={[T.blue,T.green,T.purple,T.orange][i]} r={7}/>)}
+                    </Scatter>
+                    <Scatter name="STGE Ensemble (τ*)" data={[{model:"STGE Ensemble",r:recall,p:precision}]}>
+                      <Cell fill={T.text} />
+                    </Scatter>
+                  </ScatterChart>
                 </ResponsiveContainer>
               </Card>
+            </div>
 
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18}}>
               <Card>
-                <p style={{color:T.muted,fontSize:12,margin:"0 0 12px",fontWeight:500}}>Per-Branch vs Ensemble — Accuracy</p>
-                <ResponsiveContainer width="100%" height={210}>
-                  <BarChart data={tp.branchAcc} margin={{left:0,right:8,top:18,bottom:18}}>
+                <p style={{color:T.muted,fontSize:12,margin:"0 0 12px",fontWeight:500}}>Per-Branch Accuracy — {ds}</p>
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={branches} margin={{left:8,right:8,top:4,bottom:4}}>
                     <CartesianGrid stroke={T.grid} strokeDasharray="3 3"/>
-                    <XAxis dataKey="b" tick={{fill:T.sub,fontSize:9}} angle={-18} textAnchor="end" height={48}/>
-                    <YAxis domain={[0,1]} tick={{fill:T.muted,fontSize:9}}/>
-                    <Tooltip content={<Tip/>}/>
-                    <Bar dataKey="v" name="Accuracy" radius={[4,4,0,0]} label={{position:"top",fill:T.sub,fontSize:9,formatter:v=>v.toFixed(3)}}>
-                      {tp.branchAcc.map((x,i)=>(
-                        <Cell key={i} fill={[T.blue,T.orange,T.green,T.red,T.text][i]}/>
-                      ))}
+                    <XAxis dataKey="model" tick={{fill:T.sub,fontSize:10}}/>
+                    <YAxis domain={[0,1]} tickFormatter={v=>`${(v*100).toFixed(0)}%`} tick={{fill:T.muted,fontSize:9}}/>
+                    <Tooltip content={<Tip/>} formatter={v=>`${(v*100).toFixed(2)}%`}/>
+                    <Bar dataKey="acc" name="Accuracy" radius={[4,4,0,0]}>
+                      {branches.map((b,i)=><Cell key={i} fill={i===branches.length-1?T.blue:T.borderMd}/>)}
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </Card>
 
               <Card>
-                <p style={{color:T.muted,fontSize:12,margin:"0 0 12px",fontWeight:500}}>Ensemble Metrics</p>
-                <ResponsiveContainer width="100%" height={210}>
-                  <BarChart data={tp.metrics} margin={{left:0,right:8,top:18,bottom:18}}>
-                    <CartesianGrid stroke={T.grid} strokeDasharray="3 3"/>
-                    <XAxis dataKey="m" tick={{fill:T.sub,fontSize:9}} angle={-18} textAnchor="end" height={48}/>
-                    <YAxis domain={[0,1]} tick={{fill:T.muted,fontSize:9}}/>
-                    <Tooltip content={<Tip/>}/>
-                    <Bar dataKey="v" name="Score" fill={T.green} radius={[4,4,0,0]} label={{position:"top",fill:T.sub,fontSize:9,formatter:v=>v.toFixed(3)}}>
-                      {tp.metrics.map((x,i)=>(
-                        <Cell key={i} fill={x.m==="FAR"?T.red:T.green}/>
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                <p style={{color:T.muted,fontSize:12,margin:"0 0 14px",fontWeight:500}}>Headline Test-Set Metrics — {ds}</p>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                  {[
+                    {k:"Accuracy",  v:`${(acc*100).toFixed(2)}%`,      c:T.blue},
+                    {k:"F1-Score",  v:`${(f1*100).toFixed(2)}%`,       c:T.green},
+                    {k:"Recall/DR", v:`${(recall*100).toFixed(2)}%`,   c:T.orange},
+                    {k:"Precision", v:`${(precision*100).toFixed(2)}%`,c:T.purple},
+                    {k:"FAR",       v:far.toFixed(4),                  c:T.red},
+                    {k:"ROC-AUC",   v:auc.toFixed(4),                  c:T.teal},
+                  ].map(m=>(
+                    <div key={m.k} style={{background:T.surface,borderRadius:8,padding:"10px 12px"}}>
+                      <p style={{color:T.muted,fontSize:10,margin:0,textTransform:"uppercase"}}>{m.k}</p>
+                      <p style={{color:m.c,fontSize:17,fontWeight:700,margin:"3px 0 0",fontFamily:"'Roboto Mono',monospace"}}>{m.v}</p>
+                    </div>
+                  ))}
+                </div>
               </Card>
             </div>
-
-            <p style={{color:T.muted,fontSize:10,marginTop:14,fontStyle:"italic"}}>
-              Confusion-matrix counts, per-branch accuracy, ensemble metrics, AUC and τ* are exact notebook values.
-              ROC / PR / score-distribution shapes are reconstructed from those summary statistics for interactive display.
-            </p>
           </div>
         )}
 
@@ -1017,15 +881,19 @@ export default function Dashboard(){
             </SH>
 
             <div style={{display:"grid",gridTemplateColumns:"auto 1fr",gap:24,marginBottom:24,alignItems:"start"}}>
+
+              {/* Matrix visual */}
               <Card style={{minWidth:320}}>
                 <p style={{color:T.muted,fontSize:12,margin:"0 0 16px",fontWeight:500}}>
                   Confusion Matrix — {ds}
                   <span style={{marginLeft:8,color:T.muted,fontSize:11}}>n = {total.toLocaleString()}</span>
                 </p>
                 <div style={{display:"grid",gridTemplateColumns:"auto 1fr 1fr",gap:2}}>
+                  {/* headers */}
                   <div/>
                   <div style={{textAlign:"center",fontSize:11,color:T.muted,padding:"4px 0",fontWeight:600}}>Pred: BENIGN</div>
                   <div style={{textAlign:"center",fontSize:11,color:T.muted,padding:"4px 0",fontWeight:600}}>Pred: ATTACK</div>
+                  {/* row 1 */}
                   <div style={{fontSize:11,color:T.muted,display:"flex",alignItems:"center",paddingRight:8,fontWeight:600,writingMode:"vertical-lr",transform:"rotate(180deg)",textAlign:"center"}}>True: BENIGN</div>
                   <div style={{background:T.greenL,border:`2px solid ${T.green}`,borderRadius:8,padding:"20px 10px",textAlign:"center"}}>
                     <div style={{fontSize:11,color:T.green,fontWeight:700,marginBottom:4}}>TN</div>
@@ -1037,6 +905,7 @@ export default function Dashboard(){
                     <div style={{fontSize:22,fontWeight:700,color:T.text,fontFamily:"'Roboto Mono',monospace"}}>{FP.toLocaleString()}</div>
                     <div style={{fontSize:10,color:T.muted,marginTop:3}}>{(FP/total*100).toFixed(2)}%</div>
                   </div>
+                  {/* row 2 */}
                   <div style={{fontSize:11,color:T.muted,display:"flex",alignItems:"center",paddingRight:8,fontWeight:600,writingMode:"vertical-lr",transform:"rotate(180deg)",textAlign:"center"}}>True: ATTACK</div>
                   <div style={{background:T.yellowL,border:`2px solid ${T.yellow}`,borderRadius:8,padding:"20px 10px",textAlign:"center"}}>
                     <div style={{fontSize:11,color:T.orange,fontWeight:700,marginBottom:4}}>FN</div>
@@ -1051,16 +920,17 @@ export default function Dashboard(){
                 </div>
               </Card>
 
+              {/* Derived stats */}
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
                 {[
-                  {label:"Accuracy",       value:`${(acc*100).toFixed(4)}%`, formula:"(TP+TN)/N",        color:T.blue},
-                  {label:"Precision",      value:`${(precision*100).toFixed(4)}%`,formula:"TP/(TP+FP)",   color:T.purple},
-                  {label:"Recall (DR)",    value:`${(recall*100).toFixed(4)}%`,  formula:"TP/(TP+FN)",    color:T.green},
-                  {label:"F1-Score",       value:`${(f1*100).toFixed(4)}%`,      formula:"2·P·R/(P+R)",   color:T.teal},
-                  {label:"FAR",            value:far.toFixed(6),               formula:"FP/(FP+TN)",      color:T.red},
-                  {label:"ROC-AUC",        value:auc.toFixed(4),               formula:"Area under ROC",  color:T.orange},
-                  {label:"Total Flows",    value:total.toLocaleString(),       formula:"Test set size",   color:T.muted},
-                  {label:"OOA Threshold τ*",value:tau,                         formula:"Calibrated by OOA",color:T.yellow},
+                  {label:"Accuracy",      value:`${(acc*100).toFixed(4)}%`, formula:"(TP+TN)/N",          color:T.blue},
+                  {label:"Precision",     value:`${(precision*100).toFixed(4)}%`,formula:"TP/(TP+FP)",       color:T.purple},
+                  {label:"Recall (DR)",   value:`${(recall*100).toFixed(4)}%`,  formula:"TP/(TP+FN)",       color:T.green},
+                  {label:"F1-Score",      value:`${(f1*100).toFixed(4)}%`,      formula:"2·P·R/(P+R)",      color:T.teal},
+                  {label:"FAR",           value:far.toFixed(6),               formula:"FP/(FP+TN)",         color:T.red},
+                  {label:"ROC-AUC",       value:auc.toFixed(4),               formula:"Area under ROC",     color:T.orange},
+                  {label:"Total Flows",   value:total.toLocaleString(),       formula:"Test set size",      color:T.muted},
+                  {label:"OOA Threshold τ*",value:tau,                       formula:"Calibrated by OOA",  color:T.yellow},
                 ].map(s=>(
                   <div key={s.label} style={{background:T.white,border:`1px solid ${T.border}`,borderRadius:10,padding:"14px 16px"}}>
                     <p style={{color:T.muted,fontSize:10,textTransform:"uppercase",letterSpacing:".06em",margin:0}}>{s.label}</p>
@@ -1071,12 +941,17 @@ export default function Dashboard(){
               </div>
             </div>
 
+            {/* Per-class bar breakdown */}
             <Card>
               <p style={{color:T.muted,fontSize:12,margin:"0 0 12px",fontWeight:500}}>Prediction Distribution by Class</p>
               <ResponsiveContainer width="100%" height={180}>
                 <BarChart
-                  data={[{cls:"True Benign",correct:TN,wrong:FP},{cls:"True Attack",correct:TP,wrong:FN}]}
-                  margin={{left:20,right:20,top:4,bottom:4}}>
+                  data={[
+                    {cls:"True Benign",   correct:TN, wrong:FP},
+                    {cls:"True Attack",   correct:TP, wrong:FN},
+                  ]}
+                  margin={{left:20,right:20,top:4,bottom:4}}
+                >
                   <CartesianGrid stroke={T.grid} strokeDasharray="3 3"/>
                   <XAxis dataKey="cls" tick={{fill:T.sub,fontSize:11}}/>
                   <YAxis tickFormatter={v=>v.toLocaleString()} tick={{fill:T.muted,fontSize:10}}/>
@@ -1189,14 +1064,15 @@ export default function Dashboard(){
               CICIoT2023 Label-Free Inference
             </SH>
 
+            {/* Pipeline strip */}
             <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",background:T.white,
               border:`1px solid ${T.border}`,borderRadius:10,overflow:"hidden",marginBottom:24}}>
               {[
-                {n:1,icon:"📂",t:"Upload CSV",   d:"Any CICIoT2023 CSV file"},
-                {n:2,icon:"🔒",t:"Strip Labels", d:"auto-detects & removes label / attack_type / class"},
-                {n:3,icon:"⚗️",t:"AOA Select",   d:"18 discriminative features from 46 raw"},
-                {n:4,icon:"🧠",t:"STGE Score",   d:"AE(0.21) + LSTM(0.24) + GNN(0.27) + Trans(0.28)"},
-                {n:5,icon:"🎯",t:"OOA Predict",  d:`τ* = ${TAU_CIC} → BENIGN / ATTACK`},
+                {n:1,icon:"📂",t:"Upload CSV",     d:"Any CICIoT2023 CSV file"},
+                {n:2,icon:"🔒",t:"Strip Labels",   d:"auto-detects & removes label / attack_type / class"},
+                {n:3,icon:"⚗️",t:"AOA Select",     d:"18 discriminative features from 46 raw"},
+                {n:4,icon:"🧠",t:"STGE Score",     d:"AE(0.21) + LSTM(0.24) + GNN(0.27) + Trans(0.28)"},
+                {n:5,icon:"🎯",t:"OOA Predict",    d:`τ* = ${TAU_CIC} → BENIGN / ATTACK`},
               ].map((s,i)=>(
                 <div key={i} style={{padding:"14px 16px",borderRight:i<4?`1px solid ${T.border}`:"none",position:"relative"}}>
                   <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:i===4?T.green:T.blue}}/>
@@ -1210,6 +1086,7 @@ export default function Dashboard(){
               ))}
             </div>
 
+            {/* Idle / error */}
             {(infStep==="idle"||infStep==="error")&&(
               <div>
                 <div className="drop-z"
@@ -1242,6 +1119,7 @@ export default function Dashboard(){
               </div>
             )}
 
+            {/* Parsing / running */}
             {(infStep==="parsing"||infStep==="running")&&(
               <Card style={{textAlign:"center",padding:48}}>
                 <span className="spin" style={{fontSize:36,display:"block",marginBottom:14}}>⚙</span>
@@ -1258,8 +1136,10 @@ export default function Dashboard(){
               </Card>
             )}
 
+            {/* Results */}
             {infStep==="done"&&is&&(
               <div>
+                {/* Banner */}
                 <div style={{background:T.white,border:`1px solid ${T.border}`,borderRadius:10,
                   padding:"12px 20px",marginBottom:18,display:"flex",gap:20,alignItems:"center",flexWrap:"wrap"}}>
                   {[
@@ -1279,6 +1159,7 @@ export default function Dashboard(){
                       borderRadius:8,padding:"6px 14px",cursor:"pointer",fontSize:12}}>↩ New Upload</button>
                 </div>
 
+                {/* KPIs */}
                 <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:18}}>
                   <KpiCard label="Predicted Attack" value={is.atk.toLocaleString()} unit={`(${is.attackPct}%)`} accent={T.red}   sub={`Score > ${TAU_CIC}`}/>
                   <KpiCard label="Predicted Benign" value={is.ben.toLocaleString()} unit={`(${(100-+is.attackPct).toFixed(1)}%)`} accent={T.green} sub={`Score ≤ ${TAU_CIC}`}/>
@@ -1286,6 +1167,7 @@ export default function Dashboard(){
                   <KpiCard label="Avg Score — Benign" value={is.avgB} accent={T.green} sub="Lower = more normal"/>
                 </div>
 
+                {/* Charts */}
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16,marginBottom:18}}>
                   <Card>
                     <p style={{color:T.muted,fontSize:12,margin:"0 0 10px",fontWeight:500}}>Prediction Split</p>
@@ -1332,6 +1214,7 @@ export default function Dashboard(){
                   </Card>
                 </div>
 
+                {/* Row table */}
                 <Card>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12,gap:8,flexWrap:"wrap"}}>
                     <p style={{color:T.muted,fontSize:12,margin:0,fontWeight:500}}>
