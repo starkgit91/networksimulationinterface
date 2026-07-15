@@ -379,8 +379,211 @@ const MiniCM=({cm,ds})=>{
 };
 
 /* ─── Tabs ───────────────────────────────────────────────────────────────── */
-const TABS=["Overview","Branch Results","Training & ROC","Testing Plots","Confusion Matrix","Live Monitor","CICIoT2023 Inference"];
+const TABS=["Overview","Branch Results","Training & ROC","Testing Plots","Confusion Matrix","Live Monitor","CICIoT2023 Inference","SHAP Explainability"];
 const INFER_TAB=6;
+const SHAP_TAB=7;
+
+/* ─── SHAP Explainability ────────────────────────────────────────────────────
+   The dashboard cannot run PyTorch/SHAP in the browser, so real Shapley values
+   are computed once in the notebook (shap_dashboard_export.export_shap_report)
+   and loaded here as JSON. A small embedded SAMPLE renders on first paint; use
+   "Upload JSON" to load the real shap_report_ICS.json / shap_report_CIC.json.  */
+const SHAP_SAMPLE={"dataset":"CIC","threshold":0.1874,"expected_value":0.2143,"feature_names":["flow_duration","Rate","Srate","syn_flag_number","ack_flag_number","syn_count","urg_count","TCP","UDP","ICMP","Tot sum","Max","AVG","Std","Tot size","Magnitude","Variance","Weight"],"n_scored":848363,"n_flagged":76700,"global_importance":[{"feature":"Rate","mean_abs_shap":0.1662},{"feature":"AVG","mean_abs_shap":0.1277},{"feature":"ICMP","mean_abs_shap":0.1245},{"feature":"TCP","mean_abs_shap":0.1057},{"feature":"Std","mean_abs_shap":0.0843},{"feature":"Variance","mean_abs_shap":0.0739},{"feature":"Tot sum","mean_abs_shap":0.0684},{"feature":"syn_flag_number","mean_abs_shap":0.0524},{"feature":"Max","mean_abs_shap":0.0424},{"feature":"Srate","mean_abs_shap":0.0397},{"feature":"UDP","mean_abs_shap":0.0331},{"feature":"Magnitude","mean_abs_shap":0.0325},{"feature":"Weight","mean_abs_shap":0.0323},{"feature":"flow_duration","mean_abs_shap":0.0271},{"feature":"Tot size","mean_abs_shap":0.0201}],"nsamples":200,"background_size":100,"generated_at":"sample","alerts":[{"id":120,"score":0.9847,"is_attack":true,"expected_value":0.2143,"sum_shap":0.3825,"features":[{"feature":"TCP","raw_value":3.8025,"shap":0.1858,"direction":"toward_attack"},{"feature":"Rate","raw_value":482.4746,"shap":0.1106,"direction":"toward_attack"},{"feature":"Tot sum","raw_value":3.8627,"shap":0.0955,"direction":"toward_attack"},{"feature":"Tot size","raw_value":4.1246,"shap":0.0784,"direction":"toward_attack"},{"feature":"ack_flag_number","raw_value":4.3468,"shap":-0.0598,"direction":"toward_benign"},{"feature":"Weight","raw_value":0.4403,"shap":-0.0541,"direction":"toward_benign"},{"feature":"flow_duration","raw_value":1.3353,"shap":-0.0517,"direction":"toward_benign"},{"feature":"urg_count","raw_value":3.1132,"shap":0.023,"direction":"toward_attack"},{"feature":"Max","raw_value":2.2102,"shap":0.0198,"direction":"toward_attack"},{"feature":"UDP","raw_value":2.0417,"shap":0.0152,"direction":"toward_attack"}]},{"id":5,"score":0.9649,"is_attack":true,"expected_value":0.2143,"sum_shap":0.9053,"features":[{"feature":"Tot sum","raw_value":3.0457,"shap":0.2461,"direction":"toward_attack"},{"feature":"Rate","raw_value":96.3007,"shap":0.2107,"direction":"toward_attack"},{"feature":"syn_flag_number","raw_value":4.2143,"shap":0.1625,"direction":"toward_attack"},{"feature":"Std","raw_value":1.3349,"shap":0.1214,"direction":"toward_attack"},{"feature":"ICMP","raw_value":1.8242,"shap":0.1012,"direction":"toward_attack"},{"feature":"Weight","raw_value":3.2,"shap":0.0983,"direction":"toward_attack"},{"feature":"AVG","raw_value":0.399,"shap":0.0901,"direction":"toward_attack"},{"feature":"syn_count","raw_value":1.8973,"shap":-0.0339,"direction":"toward_benign"},{"feature":"Magnitude","raw_value":3.6456,"shap":-0.0326,"direction":"toward_benign"},{"feature":"Max","raw_value":4.7145,"shap":-0.0262,"direction":"toward_benign"}]},{"id":131,"score":0.9309,"is_attack":true,"expected_value":0.2143,"sum_shap":0.6413,"features":[{"feature":"syn_flag_number","raw_value":0.7699,"shap":0.2484,"direction":"toward_attack"},{"feature":"AVG","raw_value":2.8996,"shap":-0.1997,"direction":"toward_benign"},{"feature":"Tot sum","raw_value":2.4125,"shap":0.1952,"direction":"toward_attack"},{"feature":"ICMP","raw_value":0.7232,"shap":0.1439,"direction":"toward_attack"},{"feature":"flow_duration","raw_value":1.4593,"shap":0.0892,"direction":"toward_attack"},{"feature":"Variance","raw_value":3.7315,"shap":0.0819,"direction":"toward_attack"},{"feature":"Magnitude","raw_value":0.5673,"shap":0.0746,"direction":"toward_attack"},{"feature":"ack_flag_number","raw_value":4.2721,"shap":0.0636,"direction":"toward_attack"},{"feature":"Srate","raw_value":209.4302,"shap":-0.0382,"direction":"toward_benign"},{"feature":"Weight","raw_value":0.0128,"shap":-0.0173,"direction":"toward_benign"}]},{"id":156,"score":0.9128,"is_attack":true,"expected_value":0.2143,"sum_shap":0.9339,"features":[{"feature":"Variance","raw_value":4.352,"shap":0.2528,"direction":"toward_attack"},{"feature":"ICMP","raw_value":2.509,"shap":0.2328,"direction":"toward_attack"},{"feature":"Rate","raw_value":2359.5384,"shap":0.1314,"direction":"toward_attack"},{"feature":"flow_duration","raw_value":4.7209,"shap":0.0862,"direction":"toward_attack"},{"feature":"ack_flag_number","raw_value":2.7866,"shap":0.0753,"direction":"toward_attack"},{"feature":"syn_count","raw_value":2.3417,"shap":0.0687,"direction":"toward_attack"},{"feature":"TCP","raw_value":3.7451,"shap":0.0672,"direction":"toward_attack"},{"feature":"AVG","raw_value":1.3223,"shap":0.0599,"direction":"toward_attack"},{"feature":"Max","raw_value":3.7708,"shap":-0.048,"direction":"toward_benign"},{"feature":"Weight","raw_value":1.9871,"shap":0.0479,"direction":"toward_attack"}]},{"id":147,"score":0.9111,"is_attack":true,"expected_value":0.2143,"sum_shap":0.627,"features":[{"feature":"ICMP","raw_value":4.868,"shap":0.2303,"direction":"toward_attack"},{"feature":"Tot sum","raw_value":3.8787,"shap":-0.2232,"direction":"toward_benign"},{"feature":"Variance","raw_value":0.0405,"shap":0.2226,"direction":"toward_attack"},{"feature":"AVG","raw_value":0.6839,"shap":0.2088,"direction":"toward_attack"},{"feature":"TCP","raw_value":0.1097,"shap":0.1051,"direction":"toward_attack"},{"feature":"ack_flag_number","raw_value":3.7259,"shap":0.0857,"direction":"toward_attack"},{"feature":"syn_count","raw_value":0.5333,"shap":0.0765,"direction":"toward_attack"},{"feature":"Max","raw_value":0.9507,"shap":-0.025,"direction":"toward_benign"},{"feature":"urg_count","raw_value":4.0097,"shap":-0.0232,"direction":"toward_benign"},{"feature":"Tot size","raw_value":3.7779,"shap":-0.0199,"direction":"toward_benign"}]},{"id":143,"score":0.8742,"is_attack":true,"expected_value":0.2143,"sum_shap":0.7384,"features":[{"feature":"Tot sum","raw_value":0.5025,"shap":0.2073,"direction":"toward_attack"},{"feature":"Rate","raw_value":1749.4714,"shap":0.1903,"direction":"toward_attack"},{"feature":"TCP","raw_value":3.409,"shap":0.0937,"direction":"toward_attack"},{"feature":"syn_flag_number","raw_value":2.2979,"shap":0.0911,"direction":"toward_attack"},{"feature":"AVG","raw_value":4.8917,"shap":0.09,"direction":"toward_attack"},{"feature":"Max","raw_value":1.6219,"shap":-0.0554,"direction":"toward_benign"},{"feature":"Variance","raw_value":2.1534,"shap":0.0523,"direction":"toward_attack"},{"feature":"Weight","raw_value":1.4369,"shap":0.0495,"direction":"toward_attack"},{"feature":"syn_count","raw_value":4.4945,"shap":0.0467,"direction":"toward_attack"},{"feature":"flow_duration","raw_value":1.9127,"shap":0.0375,"direction":"toward_attack"}]}]};
+
+const ShapTip=({active,payload})=>{
+  if(!active||!payload||!payload.length)return null;
+  const p=payload[0].payload;
+  return(
+    <div style={{background:T.white,border:`1px solid ${T.border}`,borderRadius:8,padding:"8px 12px",boxShadow:"0 2px 8px rgba(0,0,0,.12)"}}>
+      <div style={{fontWeight:700,fontSize:12,color:T.text}}>{p.feature}</div>
+      {p.raw_value!==undefined&&<div style={{fontSize:11,color:T.muted}}>raw = {(+p.raw_value).toFixed(4)}</div>}
+      <div style={{fontSize:11,color:p.shap>=0?T.red:T.blue,fontWeight:600}}>
+        SHAP {p.shap>=0?"+":""}{(+p.shap).toFixed(4)} · {p.shap>=0?"→ attack":"→ benign"}
+      </div>
+    </div>
+  );
+};
+
+function ShapExplain(){
+  const [rep,setRep]=useState(SHAP_SAMPLE);
+  const [isSample,setIsSample]=useState(true);
+  const [aIdx,setAIdx]=useState(0);
+  const [err,setErr]=useState("");
+  const fileRef=useRef(null);
+
+  const onFile=useCallback(e=>{
+    const file=e.target.files[0];if(!file)return;setErr("");
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const j=JSON.parse(ev.target.result);
+        if(!j.alerts||!Array.isArray(j.alerts))throw new Error("Not a shap_report JSON (missing 'alerts').");
+        setRep(j);setIsSample(false);setAIdx(0);
+      }catch(x){setErr("Could not parse: "+x.message);}
+    };
+    reader.onerror=()=>setErr("Failed to read file.");
+    reader.readAsText(file);
+  },[]);
+
+  const alerts=rep.alerts||[];
+  const alert=alerts[Math.min(aIdx,alerts.length-1)]||null;
+  const base=rep.expected_value??0;
+  const tau=rep.threshold??0;
+
+  // Per-alert diverging bars: biggest |impact| at the top.
+  const bars=alert?[...alert.features].sort((a,b)=>Math.abs(a.shap)-Math.abs(b.shap)):[];
+  const glob=(rep.global_importance||[]).map(g=>({...g})).reverse(); // smallest at bottom for horiz chart
+  const barH=Math.max(220,bars.length*30);
+  const posSum=alert?alert.features.filter(f=>f.shap>0).reduce((s,f)=>s+f.shap,0):0;
+  const negSum=alert?alert.features.filter(f=>f.shap<0).reduce((s,f)=>s+f.shap,0):0;
+
+  return(
+    <div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:12,marginBottom:18}}>
+        <SH sub="Empirical Shapley values from the frozen 4-branch STGE ensemble (AE · Bi-LSTM · GraphSAGE · Transformer). Each bar shows how far a feature pushed a flagged flow away from the benign baseline, toward the ATTACK decision.">
+          SHAP Explainability — why the ensemble flagged these flows
+        </SH>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          {isSample&&<Badge label="SAMPLE DATA" color={T.orange} bg={T.yellowL}/>}
+          <button onClick={()=>fileRef.current?.click()} style={{
+            background:T.blue,color:T.white,border:"none",borderRadius:8,
+            padding:"8px 16px",fontSize:12,fontWeight:600,cursor:"pointer"}}>Upload JSON</button>
+          <input ref={fileRef} type="file" accept=".json" onChange={onFile} style={{display:"none"}}/>
+        </div>
+      </div>
+
+      {err&&<div style={{background:T.redL,border:`1px solid ${T.red}`,borderRadius:8,
+        padding:"10px 16px",color:T.red,fontSize:13,marginBottom:14}}>⚠ {err}</div>}
+
+      {/* KPI row */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:12,marginBottom:18}}>
+        {[
+          {label:"Dataset",value:rep.dataset||"—",color:T.blue},
+          {label:"Baseline E[f(x)]",value:(+base).toFixed(4),color:T.purple,sub:"expected benign score"},
+          {label:"OOA Threshold τ*",value:(+tau).toFixed(4),color:T.yellow,sub:"score > τ* ⇒ ATTACK"},
+          {label:"Alerts explained",value:alerts.length,color:T.red,sub:rep.n_flagged?`of ${(+rep.n_flagged).toLocaleString()} flagged`:""},
+          {label:"SHAP samples",value:rep.nsamples||"—",color:T.teal,sub:`bg ${rep.background_size||"—"}`},
+        ].map(k=>(
+          <Card key={k.label} style={{padding:14}}>
+            <div style={{fontSize:11,color:T.muted,fontWeight:600}}>{k.label}</div>
+            <div style={{fontSize:22,fontWeight:700,color:k.color,fontFamily:"'Roboto Mono',monospace",margin:"4px 0 0"}}>{k.value}</div>
+            {k.sub&&<div style={{fontSize:10,color:T.muted,marginTop:2}}>{k.sub}</div>}
+          </Card>
+        ))}
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,alignItems:"start"}}>
+        {/* Global importance */}
+        <Card>
+          <p style={{fontSize:13,fontWeight:700,color:T.text,margin:"0 0 4px"}}>Global feature importance</p>
+          <p style={{color:T.muted,fontSize:11,margin:"0 0 12px"}}>Mean |SHAP| across all explained alerts — what the model alerts on overall.</p>
+          <ResponsiveContainer width="100%" height={Math.max(240,glob.length*24)}>
+            <BarChart data={glob} layout="vertical" margin={{left:8,right:16,top:4,bottom:4}}>
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={T.border}/>
+              <XAxis type="number" tick={{fill:T.muted,fontSize:9}}/>
+              <YAxis type="category" dataKey="feature" width={110} tick={{fill:T.sub,fontSize:10}}/>
+              <Tooltip content={<ShapTip/>} cursor={{fill:T.surface}}/>
+              <Bar dataKey="mean_abs_shap" fill={T.blue} radius={[0,3,3,0]}/>
+            </BarChart>
+          </ResponsiveContainer>
+        </Card>
+
+        {/* Per-alert waterfall */}
+        <Card>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8,marginBottom:4}}>
+            <p style={{fontSize:13,fontWeight:700,color:T.text,margin:0}}>Per-alert explanation</p>
+            {alert&&<Badge label={`flow #${alert.id} · score ${(+alert.score).toFixed(3)}`}
+              color={alert.is_attack?T.red:T.green} bg={alert.is_attack?T.redL:T.greenL}/>}
+          </div>
+          <p style={{color:T.muted,fontSize:11,margin:"0 0 10px"}}>
+            <span style={{color:T.red,fontWeight:700}}>■</span> pushes toward ATTACK ·{" "}
+            <span style={{color:T.blue,fontWeight:700}}>■</span> pushes toward BENIGN
+          </p>
+          {alert?(
+            <>
+              <div style={{fontSize:11,color:T.sub,fontFamily:"'Roboto Mono',monospace",
+                background:T.surface,borderRadius:6,padding:"8px 10px",marginBottom:10}}>
+                E[f(x)]={(+base).toFixed(3)} &nbsp;+&nbsp;
+                <span style={{color:T.red}}>Σφ⁺={posSum.toFixed(3)}</span> &nbsp;
+                <span style={{color:T.blue}}>Σφ⁻={negSum.toFixed(3)}</span> &nbsp;≈&nbsp;
+                <b style={{color:T.text}}>score={(+alert.score).toFixed(3)}</b> &nbsp;
+                {(+alert.score>+tau)?<b style={{color:T.red}}>&gt; τ* → ATTACK</b>:<b style={{color:T.green}}>≤ τ*</b>}
+              </div>
+              <ResponsiveContainer width="100%" height={barH}>
+                <BarChart data={bars} layout="vertical" margin={{left:8,right:16,top:4,bottom:4}}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={T.border}/>
+                  <XAxis type="number" tick={{fill:T.muted,fontSize:9}}/>
+                  <YAxis type="category" dataKey="feature" width={110} tick={{fill:T.sub,fontSize:10}}/>
+                  <Tooltip content={<ShapTip/>} cursor={{fill:T.surface}}/>
+                  <ReferenceLine x={0} stroke={T.text} strokeWidth={1}/>
+                  <Bar dataKey="shap" radius={[2,2,2,2]}>
+                    {bars.map((b,i)=><Cell key={i} fill={b.shap>=0?T.red:T.blue}/>)}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </>
+          ):<div style={{padding:24,textAlign:"center",color:T.muted,fontSize:12}}>No alerts in this report.</div>}
+        </Card>
+      </div>
+
+      {/* Alert selector */}
+      {alerts.length>0&&(
+        <Card style={{marginTop:16}}>
+          <p style={{fontSize:13,fontWeight:700,color:T.text,margin:"0 0 10px"}}>
+            Flagged flows ({alerts.length}) — select one to explain
+          </p>
+          <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+            {alerts.map((a,i)=>(
+              <button key={a.id+"_"+i} onClick={()=>setAIdx(i)} style={{
+                background:i===aIdx?T.blue:T.surface,color:i===aIdx?T.white:T.sub,
+                border:`1px solid ${i===aIdx?T.blue:T.border}`,borderRadius:16,
+                padding:"5px 12px",fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"'Roboto Mono',monospace"}}>
+                #{a.id} · {(+a.score).toFixed(2)}
+              </button>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Feature detail table */}
+      {alert&&(
+        <Card style={{marginTop:16}}>
+          <p style={{fontSize:13,fontWeight:700,color:T.text,margin:"0 0 10px"}}>
+            Explanation vector — flow #{alert.id} (ranked by |impact|)
+          </p>
+          <div style={{overflowX:"auto"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+              <thead><tr style={{borderBottom:`2px solid ${T.border}`,textAlign:"left",color:T.muted}}>
+                <th style={{padding:"6px 8px"}}>#</th>
+                <th style={{padding:"6px 8px"}}>Feature</th>
+                <th style={{padding:"6px 8px",textAlign:"right"}}>Raw value</th>
+                <th style={{padding:"6px 8px",textAlign:"right"}}>SHAP impact</th>
+                <th style={{padding:"6px 8px"}}>Direction</th>
+              </tr></thead>
+              <tbody>
+                {[...alert.features].sort((a,b)=>Math.abs(b.shap)-Math.abs(a.shap)).map((f,i)=>(
+                  <tr key={f.feature+i} style={{borderBottom:`1px solid ${T.border}`}}>
+                    <td style={{padding:"6px 8px",color:T.muted}}>{i+1}</td>
+                    <td style={{padding:"6px 8px",fontWeight:600,color:T.text}}>{f.feature}</td>
+                    <td style={{padding:"6px 8px",textAlign:"right",fontFamily:"'Roboto Mono',monospace",color:T.sub}}>{(+f.raw_value).toFixed(4)}</td>
+                    <td style={{padding:"6px 8px",textAlign:"right",fontFamily:"'Roboto Mono',monospace",fontWeight:700,color:f.shap>=0?T.red:T.blue}}>{f.shap>=0?"+":""}{(+f.shap).toFixed(4)}</td>
+                    <td style={{padding:"6px 8px"}}>
+                      <Badge label={f.shap>=0?"→ attack":"→ benign"} color={f.shap>=0?T.red:T.blue} bg={f.shap>=0?T.redL:T.blueL}/>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p style={{fontSize:10,color:T.muted,margin:"10px 0 0"}}>
+            Bars/table show the top contributing features per flow. Full additivity (E[f(x)] + Σ all φ = score)
+            holds over every feature; only the largest are displayed. Generated: {rep.generated_at||"—"}.
+          </p>
+        </Card>
+      )}
+    </div>
+  );
+}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    MAIN COMPONENT
@@ -1439,6 +1642,9 @@ export default function Dashboard(){
             )}
           </div>
         )}
+
+        {/* ╔═══ TAB 7 — SHAP EXPLAINABILITY ═════════════════════════════╗ */}
+        {tab===SHAP_TAB&&<ShapExplain/>}
       </main>
 
       {/* ── FOOTER ─────────────────────────────────────────────────────── */}
